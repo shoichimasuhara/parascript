@@ -5,13 +5,7 @@ use Carp qw( croak );
 use Net::SSH qw( sshopen3 );
 use Symbol;
 use MIME::Base64;
-
-use Exporter::Lite;
-our @EXPORT = qw( Script Command );
-use constant {
-    Script  => 0,
-    Command => 1
-};
+use Parascript::Constant;
 
 use Class::Accessor::Lite (
     command	        => undef,
@@ -26,11 +20,11 @@ use Class::Accessor::Lite (
 sub prepare{
     my ($self, $type)   = @_;
     my $code;
-    if($type eq Script){
+    if($type eq Parascript::Constant::Script){
         croak('Set a script file path') unless $self->{script};
         $code   = $self->_read_script;
         $self->{interpreter}    = $self->_get_interpreter($code);
-    }elsif($type eq Command){
+    }elsif($type eq Parascript::Constant::Command){
         croak('Set a command') unless $self->{command};
         $code   = $self->{command};
         $self->{interpreter}    ||= 'bash';
