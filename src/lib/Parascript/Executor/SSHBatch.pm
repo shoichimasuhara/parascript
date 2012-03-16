@@ -14,15 +14,13 @@ use constant {
 };
 
 use Class::Accessor::Lite (
-    sudo_password	=> undef,
     command	        => undef,
     script	        => undef,
-    host	        => undef,
     interpreter     => undef,
-    timeout	        => undef,
-    account	        => undef,
+    timeout	        => 10,
     stdout	        => undef,
     stderr	        => undef,
+    status          => undef,
 );
 
 sub prepare{
@@ -74,30 +72,29 @@ sub _create_command_line{
 }
 
 sub exec{
-    my ($self, $host) = @_;
+    my ($self, $args) = @_;
 
     @Net::SSH::ssh_options  = (
         '-T',
         '-o', 'BatchMode=yes',
         '-o', 'StrictHostKeyChecking=no',
-        '-o', 'ConnectTimeout=10'
+        '-o', 'ConnectTimeout=' . $self->{timeout}
     );
 
-    my $account =   $self->{account};
-    $account    ||= getpwuid($>);
+    my $account = $args->{account} ||  getpwuid($>);
     my ($in, $out, $err)    = (gensym, gensym, gensym);
     my $pid = sshopen3(
-        $account . '@' . $host,
+        $account . '@' . $args->{host},
         $in, $out, $err,
         $self->{_concrete_command_line}
     );
 
-    print $in $self->{sudo_passwd} . "\n" if $self->{sudo}; close $in;
+    print $in $args->{sudo_password} . "\n" if $args->{sudo_password}; close $in;
     $self->{stdout}  = $self->_arrange_output($out);     close $out;
     $self->{stderr}  = $self->_arrange_output($err);     close $err;
 
     waitpid $pid, 0;
-    $self->{_status}     = $?>>8 ? 0 : 1;
+    $self->{status}     = $?>>8 ? 0 : 1;
 }
 
 sub _arrange_output{
