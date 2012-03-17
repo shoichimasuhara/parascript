@@ -18,15 +18,19 @@ sub read_option{
 
 sub read_config{
     my $self    = shift;
-    $self->{config} = Parascript::Config->new(
-        $self->{config}->
-    );
+    $self->{config} = Parascript::Config->new({
+        option => $self->{option}
+    });
     return $self;
 }
 
 sub read_host_list{
     my $self    = shift;
-    $self->{host_list}  = Parascirpt::Host::List->new;
+    $self->{host_list}  = Parascirpt::Host::List->new({
+        option  => $self->{option},
+        config  => $self->{config}
+    });
+    $self->{host_list}->read;
     return $self;
 }
 

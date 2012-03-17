@@ -75,7 +75,9 @@ sub exec{
         '-o', 'ConnectTimeout=' . $self->{timeout}
     );
 
-    my $account = $args->{account} ||  getpwuid($>);
+    my $account = $args->{host}->account || getpwuid($>);
+    $self->_get_sudopassword if($args->{sudo} && !($args->{host}->sudo_password));
+
     my ($in, $out, $err)    = (gensym, gensym, gensym);
     my $pid = sshopen3(
         $account . '@' . $args->{host},
@@ -99,6 +101,20 @@ sub _arrange_output{
         $buff   .= $_ . "\n";
     }
     $buff;
+}
+
+sub _get_sudo_password{
+    my $self    = shift;
+    $|  = 1;
+    print STDERR "Please input a password to sudo > ";
+    $|  = 0;
+    open TTY, '<', '/dev/tty';
+    system 'stty -echo';
+    chomp(my $passwd    = <TTY>);
+    system 'stty echo';
+    close TTY;
+    print "\n";
+    $self->{default_sudo_passwd}   = $passwd;
 }
 
 1;

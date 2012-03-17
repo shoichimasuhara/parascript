@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use Class::Accessor::Lite;
 Class::Accessor::Lite->mk_accessors(qw(
-    name account sudo sudo_password
+    name account sudo_password
 ));
 
 sub new{
@@ -22,7 +22,6 @@ sub _parse{
             my ($account, $password)    = split ':', $login;
             $self->{acccount}       = $account;
             $self->{sudo_password}  = $password;
-            $self->{sudo}           = 1;
         }else{
             $self->{account}        = $login;
         }
