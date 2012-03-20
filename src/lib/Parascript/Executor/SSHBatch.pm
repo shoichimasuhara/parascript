@@ -23,11 +23,11 @@ sub prepare{
     if($type eq Parascript::Constant::Script){
         croak('Set a script file path') unless $self->{script};
         $code   = $self->_read_script;
-        $self->{interpreter}    = $self->_get_interpreter($code);
+        $self->{_concrete_interpreter}  = $self->_get_interpreter($code);
     }elsif($type eq Parascript::Constant::Command){
         croak('Set a command') unless $self->{command};
         $code   = $self->{command};
-        $self->{interpreter}    ||= 'bash';
+        $self->{_concrete_interpreter}  = $self->{interpreter} || 'sh';
     }else{
         croak('Unknown type');
     }
@@ -58,8 +58,8 @@ sub _get_interpreter{
 
 sub _create_command_line{
     my ($self, $encoded_code)   = @_;
-    my $command_line    = 'echo "' . $encoded_code . '"|base64 -d -i|' . $self->{interpreter};
-    $command_line       = "bash -c '" . $command_line . "'";
+    my $command_line    = 'echo "' . $encoded_code . '"|base64 -d -i|' . $self->{_concrete_interpreter};
+    $command_line       = "sh -c '" . $command_line . "'";
     $command_line       = 'sudo -S ' . $command_line if $self->{sudo_password};
 
     return $command_line;
@@ -85,7 +85,10 @@ sub exec{
         $self->{_concrete_command_line}
     );
 
-    print $in $args->{sudo_password} . "\n" if $args->{sudo_password}; close $in;
+    # Input a sudo password to STDIN
+    print $in $args->{host}->sudo_password . "\n" if $args->{sudo}; close $in;
+
+    # Get the STDOUT and STDERR
     $self->{stdout}  = $self->_arrange_output($out);     close $out;
     $self->{stderr}  = $self->_arrange_output($err);     close $err;
 

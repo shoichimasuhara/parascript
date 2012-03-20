@@ -12,11 +12,8 @@ sub run{
 }
 
 sub new{
-    my ($class, $option, $config)   = @_;
-    my $self    = bless {
-        _option => $option,
-        _config => $config
-    }, $class;
+    my ($class, $c)   = @_;
+    my $self    = bless {_c => $c}, $class;
 
     return $self;
 }

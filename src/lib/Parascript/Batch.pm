@@ -13,9 +13,7 @@ sub run{
 
 sub new{
     my ($class, $c)   = @_;
-    my $self    = bless {
-        c   => $c
-    }, $class;
+    my $self    = bless {_c  => $c}, $class;
     return $self;
 }
 
