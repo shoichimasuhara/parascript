@@ -72,9 +72,9 @@ sub _init{
 
 =head1 SYNOPSIS
 
-parascript -h
-parascript --help
-parascript [OPTION] ...
+parascript -h  
+parascript --help  
+parascript [OPTION] ...  
 
  Options:
     -h --help                               display a summary of this command 
@@ -82,13 +82,14 @@ parascript [OPTION] ...
     -1 --single SINGLE_HOST                 single host              from STDIN or file or single host)
     -c --command COMMAND                    command                 (You can choice single command or script file)
     --script SCRIPT_FILE                    script file
-    -i --interpreter PATH_TO_INTERPRETER    interpreter            
+    -i --interpreter PATH_TO_INTERPRETER    interpreter
+    --nostatus                              don't show command status
     --sudo                                  to execute with sudo
-    -o --output PUTH_TO_OUTPUT_DIR          output directory        (Make log files like $HOST.out and $HOST.err)
-    -t --test                               show command status     (Display only status OK and NG)
+    --log PUTH_TO_LOG_DIR                   log directory           (Make log files like $HOST.out and $HOST.err)
     --ok PATH_TO_OK_LIST_FILE               file to save OK list    (Default not saved)
     --ng PATH_TO_NG_LIST_FILE               file to save NG list    (Default not saved)
-    -e --error                              show error
+    -o --stdout                             show stdout
+    -e --stderr                             show stderr
     -n --nohostname                         don't show hostname
     -q --quiet                              don't show at all
     -m --maxproc MAX_PROC_NUM               max proccess            (Default 20)
@@ -110,7 +111,6 @@ sub _get_options{
         "nostatus"          => \$self->{_no_status},
         "sudo"              => \$self->{_sudo},
         "log=s"             => \$self->{_output_dir},
-        "t|test"            => \$self->{_show_status},
         "ok=s"              => \$self->{_ok_list_file},
         "ng=s"              => \$self->{_ng_list_file},
         "o|stdout"          => \$self->{_show_out},
