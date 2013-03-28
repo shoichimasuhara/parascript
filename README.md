@@ -1,8 +1,8 @@
 # SYNOPSIS
 
-parascript -h
-parascript --help
-parascript \[OPTION\] ...
+parascript -h  
+parascript --help  
+parascript \[OPTION\] ...  
 
     Options:
        -h --help                               display a summary of this command 
