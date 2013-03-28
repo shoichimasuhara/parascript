@@ -14,15 +14,12 @@ use Term::ANSIColor qw/ colored /;
 use Path::Class qw/ dir file /;
 use Data::Dumper;
 
-use Parascript::ResultBucket;
-
 $Term::ANSIColor::AUTORESET = 1;
 
 sub run{
     my $self    = __PACKAGE__->_new;
     $self
-        ->_init
-        ->_exec
+        ->_init ->_exec
     ;
 }
 
@@ -30,7 +27,7 @@ sub _new{
     my $class   = shift;
     my $self    = bless {
         _maxproc            => 20,
-        _result_bucket      => Parascript::ResultBucket->new(1024 * 1024),
+        _results            => {OK  => [], NG => []},
         _list_stdin         => -p STDIN ? 1 : undef,
         _list_file          => undef,
         _user               => $ENV{USER}, 
@@ -43,6 +40,7 @@ sub _new{
         _interpreter        => undef,
         _output_dir         => undef,
         _show_status        => 1,
+        _ok_list_file       => undef,
         _ng_list_file       => undef,
         _no_hostname        => undef,
         _show_out           => undef,
@@ -88,6 +86,7 @@ parascript [OPTION] ...
     --sudo                                  to execute with sudo
     -o --output PUTH_TO_OUTPUT_DIR          output directory        (Make log files like $HOST.out and $HOST.err)
     -t --test                               show command status     (Display only status OK and NG)
+    --ok PATH_TO_OK_LIST_FILE               file to save OK list    (Default not saved)
     --ng PATH_TO_NG_LIST_FILE               file to save NG list    (Default not saved)
     -e --error                              show error
     -n --nohostname                         don't show hostname
@@ -112,6 +111,7 @@ sub _get_options{
         "sudo"              => \$self->{_sudo},
         "log=s"             => \$self->{_output_dir},
         "t|test"            => \$self->{_show_status},
+        "ok=s"              => \$self->{_ok_list_file},
         "ng=s"              => \$self->{_ng_list_file},
         "o|stdout"          => \$self->{_show_out},
         "e|stderr"          => \$self->{_show_err},
@@ -271,6 +271,11 @@ sub _exec{
 
 
     my $pm      = Parallel::ForkManager->new($self->{_maxproc});
+    #$pm->run_on_finish(
+    #    sub{
+    #    }
+    #);
+    $pm->run_on_finish(sub{$self->_run_on_finish(@_);});
     $|=0;
     foreach my $host (@{$self->{_hosts}}){
         $pm->start and next;
@@ -288,14 +293,19 @@ sub _exec{
             print $buff;
             $|=0;
         }
-        unless($self->{_status}){
-            $self->{_result_bucket}->add('NG', $self->{_host});
-        }
-        $pm->finish;
+        $pm->finish($self->{_status}, \$self->{_host});
     }
     $pm->wait_all_children;
     $self->_display_ng_hosts;
-    $self->{_result_bucket}->close;
+}
+sub _run_on_finish{
+    my $self    = shift;
+    my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data) = @_;
+    if($exit_code){
+        push @{$self->{_results}->{OK}}, $$data;
+    }else{
+        push @{$self->{_results}->{NG}}, $$data;
+    }
 }
 
 sub _exec_ssh{
@@ -410,9 +420,16 @@ sub _logging{
             $io->close;
         }
     }
-    if($self->{_ng_list_file}){
-        unless($self->{_status}){
-            my $io  = file($self->{_ng_list_file})->open('a');
+    foreach my $type (qw/ ok ng /){
+        my $file    = '_' . $type . '_list_file';
+        if(
+            $self->{$file} and
+            (
+                ($self->{_status} and $type eq 'ok') or
+                (!$self->{_status} and $type eq 'ng')
+            )
+        ){
+            my $io  = file($self->{$file})->open('a');
             $io->blocking(1);
             $io->print($self->{_host} . "\n");
             $io->close;
@@ -422,8 +439,8 @@ sub _logging{
 
 sub _display_ng_hosts{
     my $self        = shift;
-    my $ng_hosts    = $self->{_result_bucket}->dump->{NG};
-    if($ng_hosts and ref $ng_hosts eq 'ARRAY'){
+    my $ng_hosts    = $self->{_results}->{NG};
+    if($ng_hosts and ref $ng_hosts eq 'ARRAY' and scalar(@{$ng_hosts})){
         my $buff    = '';
         $buff       .= colored("==NG HOSTS====\n", 'RED');
         $buff       .= join("\n", @{$ng_hosts});
