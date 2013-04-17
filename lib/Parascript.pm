@@ -242,10 +242,6 @@ sub _exec{
 
 
     my $pm      = Parallel::ForkManager->new($self->{_maxproc});
-    #$pm->run_on_finish(
-    #    sub{
-    #    }
-    #);
     $pm->run_on_finish(sub{$self->_run_on_finish(@_);});
     $|=0;
     foreach my $host (@{$self->{_hosts}}){
