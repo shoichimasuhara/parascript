@@ -73,6 +73,7 @@ sub _init{
 sub _get_options{
     my $self    = shift;
     GetOptions(
+        "v|version"         => \$self->{_version},
         "h|help"            => \$self->{_help},
         "l|list=s"          => \$self->{_list_file},
         "1|single=s"        => \$self->{_single_host},
@@ -103,6 +104,7 @@ sub _check_options{
     my $self    = shift;
 
     pod2usage if $self->{_help};
+    $self->_show_version if $self->{_version};
 
     $self->_file_check($_) foreach qw/ list script /;
     $self->_dir_check($_) foreach qw/ output /;
@@ -123,6 +125,12 @@ sub _check_options{
     ;
 
     return $self;
+}
+
+sub _show_version {
+    my $self    = shift;
+    print "Version: $VERSION\n";
+    exit;
 }
 
 sub _file_check{
