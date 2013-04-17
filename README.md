@@ -14,8 +14,8 @@ parascript \[OPTION\] ...
        --nostatus                              don't show command status
        --sudo                                  to execute with sudo
        --log PUTH_TO_LOG_DIR                   log directory           (Make log files like $HOST.out and $HOST.err)
-       --ok PATH_TO_OK_LIST_FILE               file to save OK list    (Default not saved)
-       --ng PATH_TO_NG_LIST_FILE               file to save NG list    (Default not saved)
+       --succ PATH_TO_SUCC_LIST_FILE           file to save SUCC list  (Default not saved)
+       --fail PATH_TO_FAIL_LIST_FILE           file to save FAIL list  (Default not saved)
        -o --stdout                             show stdout
        -e --stderr                             show stderr
        -n --nohostname                         don't show hostname

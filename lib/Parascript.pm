@@ -2,7 +2,7 @@ package Parascript;
 use strict;
 use warnings;
 
-our $VERSION    = '0.2.0';
+our $VERSION    = '0.3.0';
 
 use Getopt::Long;
 use Pod::Usage;
@@ -27,7 +27,7 @@ sub _new{
     my $class   = shift;
     my $self    = bless {
         _maxproc            => 20,
-        _results            => {OK  => [], NG => []},
+        _results            => {SUCC  => [], FAIL => []},
         _list_stdin         => -p STDIN ? 1 : undef,
         _list_file          => undef,
         _user               => $ENV{USER}, 
@@ -40,8 +40,8 @@ sub _new{
         _interpreter        => undef,
         _output_dir         => undef,
         _show_status        => 1,
-        _ok_list_file       => undef,
-        _ng_list_file       => undef,
+        _succ_list_file     => undef,
+        _fail_list_file     => undef,
         _no_hostname        => undef,
         _show_out           => undef,
         _show_err           => undef,
@@ -83,8 +83,8 @@ sub _get_options{
         "nostatus"          => \$self->{_no_status},
         "sudo"              => \$self->{_sudo},
         "log=s"             => \$self->{_output_dir},
-        "ok=s"              => \$self->{_ok_list_file},
-        "ng=s"              => \$self->{_ng_list_file},
+        "succ=s"            => \$self->{_succ_list_file},
+        "fail=s"            => \$self->{_fail_list_file},
         "o|stdout"          => \$self->{_show_out},
         "e|stderr"          => \$self->{_show_err},
         "n|nohostname"      => \$self->{_no_hostname},
@@ -271,15 +271,15 @@ sub _exec{
         $pm->finish($self->{_status}, \$self->{_host});
     }
     $pm->wait_all_children;
-    $self->_display_ng_hosts;
+    $self->_display_fail_hosts;
 }
 sub _run_on_finish{
     my $self    = shift;
     my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data) = @_;
     if($exit_code){
-        push @{$self->{_results}->{OK}}, $$data;
+        push @{$self->{_results}->{SUCC}}, $$data;
     }else{
-        push @{$self->{_results}->{NG}}, $$data;
+        push @{$self->{_results}->{FAIL}}, $$data;
     }
 }
 
@@ -368,9 +368,9 @@ sub _make_contents{
     if($self->{_show_status}){ 
         $buff   .= $self->{_host} . "\t";
         if($self->{_status}){
-            $buff   .= colored("OK\n", "YELLOW");
+            $buff   .= colored("SUCC\n", "YELLOW");
         }else{
-            $buff   .= colored("NG\n", "RED");
+            $buff   .= colored("FAIL\n", "RED");
         }
     }
     if($self->{_show_out}){
@@ -395,13 +395,13 @@ sub _logging{
             $io->close;
         }
     }
-    foreach my $type (qw/ ok ng /){
+    foreach my $type (qw/ succ fail /){
         my $file    = '_' . $type . '_list_file';
         if(
             $self->{$file} and
             (
-                ($self->{_status} and $type eq 'ok') or
-                (!$self->{_status} and $type eq 'ng')
+                ($self->{_status} and $type eq 'succ') or
+                (!$self->{_status} and $type eq 'fail')
             )
         ){
             my $io  = file($self->{$file})->open('a');
@@ -412,13 +412,13 @@ sub _logging{
     }
 }
 
-sub _display_ng_hosts{
+sub _display_fail_hosts{
     my $self        = shift;
-    my $ng_hosts    = $self->{_results}->{NG};
-    if($ng_hosts and ref $ng_hosts eq 'ARRAY' and scalar(@{$ng_hosts})){
+    my $fail_hosts  = $self->{_results}->{FAIL};
+    if($fail_hosts and ref $fail_hosts eq 'ARRAY' and scalar(@{$fail_hosts})){
         my $buff    = '';
-        $buff       .= colored("==NG HOSTS====\n", 'RED');
-        $buff       .= join("\n", @{$ng_hosts});
+        $buff       .= colored("==FAIL HOSTS====\n", 'RED');
+        $buff       .= join("\n", @{$fail_hosts});
         $buff       .= "\n";
         print STDERR $buff;
     }
