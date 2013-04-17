@@ -2,7 +2,7 @@ package Parascript;
 use strict;
 use warnings;
 
-our $VERSION    = '0.2.0';
+our $VERSION    = '0.3.0';
 
 use Getopt::Long;
 use Pod::Usage;
